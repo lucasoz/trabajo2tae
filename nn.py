@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+
 # TensorFlow and tf.keras
 import tensorflow as tf
 from tensorflow import keras
@@ -15,16 +18,16 @@ tf.set_random_seed(random_state)
 bank_df = pd.read_csv("data/bank-additional.csv", sep=";")
 
 # Los 10 atributos elejidos son:
-# 1. age (numÃ©rico): Edad del cliente.
+# 1. age (numérico): Edad del cliente.
 # 2. job (categorico): Tipo de trabajo.
-# 3. marital (categÃ³rico): Estado civil.
-# 4. education (categÃ³rico): Grado de escolaridad alcanzado.
-# 5. default (categÃ³rico): El cliente tiene deudas vencidas.
-# 6. housing (categÃ³rico): El cliente tiene un prestamo de vivienda.
-# 7. loan (categÃ³rico): El cliente tiene prestamos personales.
-# 8. duration (numÃ©rico): DuraciÃ³n del contacto (Llamada).
-# 9. month (categÃ³rico): Mes en el que se realizÃ³ el Ãºltimo contacto (Llamada).
-# 10. previous (numÃ©rico): NÃºmero de contactos previos con el cliente.
+# 3. marital (categórico): Estado civil.
+# 4. education (categórico): Grado de escolaridad alcanzado.
+# 5. default (categórico): El cliente tiene deudas vencidas.
+# 6. housing (categórico): El cliente tiene un prestamo de vivienda.
+# 7. loan (categórico): El cliente tiene prestamos personales.
+# 8. duration (numérico): Duración del contacto (Llamada).
+# 9. month (categórico): Mes en el que se realizó el último contacto (Llamada).
+# 10. previous (numérico): Número de contactos previos con el cliente.
 
 merge_vector = ["age","job","marital","education", "default","housing","loan","duration", "month","previous","y"]
 
@@ -39,7 +42,7 @@ unique_df = unique_df.sample(frac=1)
 def encode(series):
   return pd.get_dummies(series.astype(str))
 
-# Como las variables categÃ³ricas tienen unknown en comÃºn entonces pueden haber errores a la hora de codificar estas variables
+# Como las variables categóricas tienen unknown en común entonces pueden haber errores a la hora de codificar estas variables
 
 unique_df.job = unique_df.job.map('job_{}'.format)
 unique_df.marital = unique_df.marital.map('marital_{}'.format)
@@ -97,10 +100,10 @@ model.fit(x_train, y_train, epochs=150, batch_size=10)
 _, accuracy = model.evaluate(x_test, y_test)
 print('Neural Network Accuracy: %.2f' % (accuracy*100))
 
-# Se crea un DataFrame con una fila de 0 por defecto, mÃ¡s adelante segÃºn los datos entrados se cambiarÃ¡n los valores respectivos
+# Se crea un DataFrame con una fila de 0 por defecto, más adelante según los datos entrados se cambiarán los valores respectivos
 x_prediction = pd.DataFrame(np.array([np.zeros(48)]), columns=variables)
 
-# FunciÃ³n que permite Listar opciones y validar la elecciÃ³n de variables categÃ³ricas
+# Función que permite Listar opciones y validar la elección de variables categóricas
 def optionsCat(lista):
     while True:
         for idx, j in enumerate(lista):
@@ -121,7 +124,7 @@ def optionsCat(lista):
 
     return lista[responseInt]
 
-# FunciÃ³n que permite Listar opciones y validar la elecciÃ³n de variables numÃ©ricas
+# Función que permite Listar opciones y validar la elección de variables numéricas
 def optionsNumber():
     while True:
         try:

@@ -1,0 +1,9 @@
+Instalacion de paquetes en python3 linux con pip3
+En linux python3 viene preinstalado solo habría que actualizar los paquetes
+
+sudo apt update
+sudo apt upgrade
+sudo apt install python3-pip
+sudo pip3 install tensorflow
+sudo pip3 install pandas
+

@@ -1,10 +1,17 @@
-import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from math import floor, ceil
 from pylab import rcParams
+
+# TensorFlow and tf.keras
+import tensorflow as tf
+from tensorflow import keras
+
+# Helper libraries
+import numpy as np
+import matplotlib.pyplot as plt
+
+print(tf.__version__)
 
 sns.set(style='ticks', palette='Spectral', font_scale=1.5)
 
@@ -19,8 +26,8 @@ tf.set_random_seed(random_state)
 
 bank_df = pd.read_csv("data/bank-additional.csv", sep=";")
 
-print(bank_df.shape)
-print(bank_df.columns)
+# print(bank_df.shape)
+# print(bank_df.columns)
 
 # Los 10 atributos elejidos son:
 # 1. age (numérico): Edad del cliente.
@@ -42,6 +49,8 @@ duplicated_mask = bank_df.duplicated(keep=False, subset=merge_vector)
 duplicated_df = bank_df[duplicated_mask]
 unique_df = bank_df[~duplicated_mask]
 unique_df = unique_df[merge_vector]
+
+unique_df = unique_df.sample(frac=1)
 # Se encontraron 2 datos repetidos
 
 # print(unique_df.shape)
@@ -100,10 +109,7 @@ unique_df.default = unique_df.default.map('default_{}'.format)
 unique_df.housing = unique_df.housing.map('housing_{}'.format)
 unique_df.loan = unique_df.loan.map('loan_{}'.format)
 
-print(unique_df.shape)
-
 train_x = pd.get_dummies(unique_df.job)
-print(train_x.shape)
 train_x['age'] = unique_df.age
 train_x['duration'] = unique_df.duration
 train_x['previous'] = unique_df.previous
@@ -112,9 +118,40 @@ train_x = pd.concat([train_x,
                      encode(unique_df.education),
                      encode(unique_df.default),
                      encode(unique_df.housing),
-                     encode(unique_df.loan)], axis = 1)
+                     encode(unique_df.loan),
+                     encode(unique_df.month)], axis = 1)
+train_x['jan'] = 0
+train_x['feb'] = 0
 
-print(train_x.shape)
+job = unique_df.job.unique()
+marital = unique_df.marital.unique()
+education = unique_df.education.unique()
+default = unique_df.default.unique()
+housing = unique_df.housing.unique()
+loan = unique_df.loan.unique()
+month = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+variables = np.concatenate((job, ['age', 'duration', 'previous'], marital, education, default, housing, loan, month))
+x = train_x[variables]
+y = unique_df.y.replace('yes',1).replace('no', 0)
 
-train_y = encode(unique_df.y)
-print(train_y.shape)
+train_size = 0.7
+
+train_cnt = floor(train_x.shape[0] * train_size)
+x_train = x.iloc[0:train_cnt].values
+y_train = y.iloc[0:train_cnt].values
+x_test = x.iloc[train_cnt:].values
+y_test = y.iloc[train_cnt:].values
+
+# define the keras model
+model = keras.models.Sequential()
+model.add(keras.layers.Dense(12, input_dim=48, activation='relu'))
+model.add(keras.layers.Dense(48, activation='relu'))
+model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(x_train, y_train, epochs=150, batch_size=10)
+
+# evaluate the keras model
+_, accuracy = model.evaluate(x_test, y_test)
+print('Accuracy: %.2f' % (accuracy*100))
+

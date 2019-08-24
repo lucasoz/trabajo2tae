@@ -1,33 +1,18 @@
-import pandas as pd
-import seaborn as sns
-from math import floor, ceil
-from pylab import rcParams
-
 # TensorFlow and tf.keras
 import tensorflow as tf
 from tensorflow import keras
 
 # Helper libraries
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+from math import floor
 
-print(tf.__version__)
-
-sns.set(style='ticks', palette='Spectral', font_scale=1.5)
-
-material_palette = ["#4CAF50", "#2196F3", "#9E9E9E", "#FF9800", "#607D8B", "#9C27B0"]
-sns.set_palette(material_palette)
-rcParams['figure.figsize'] = 16, 8
-
-plt.xkcd();
 random_state = 42
 np.random.seed(random_state)
 tf.set_random_seed(random_state)
 
+# https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
 bank_df = pd.read_csv("data/bank-additional.csv", sep=";")
-
-# print(bank_df.shape)
-# print(bank_df.columns)
 
 # Los 10 atributos elejidos son:
 # 1. age (numérico): Edad del cliente.
@@ -42,8 +27,6 @@ bank_df = pd.read_csv("data/bank-additional.csv", sep=";")
 # 10. previous (numérico): Número de contactos previos con el cliente.
 
 merge_vector = ["age","job","marital","education", "default","housing","loan","duration", "month","previous","y"]
-# print(merge_vector)
-
 
 duplicated_mask = bank_df.duplicated(keep=False, subset=merge_vector)
 duplicated_df = bank_df[duplicated_mask]
@@ -52,55 +35,11 @@ unique_df = unique_df[merge_vector]
 
 unique_df = unique_df.sample(frac=1)
 # Se encontraron 2 datos repetidos
-
-# print(unique_df.shape)
-# print(unique_df.columns)
-# Descomentar para sacar las gráficas
-
-# unique_df.age.value_counts(bins=10).plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.job.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.marital.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.education.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.default.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.housing.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.loan.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.duration.value_counts(bins=5).plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.month.value_counts().plot(kind="bar", rot=0);
-# plt.show()
-#
-# unique_df.previous.value_counts().plot(kind="bar", rot=0);
-
-# sns.pairplot(unique_df[["age","job","marital","education", "default","housing","loan","duration", "month","previous", "y"]], hue="y");
-# plt.show()
-
-# corr_mat = unique_df.corr()
-# fig, ax = plt.subplots(figsize=(20, 12))
-# sns.heatmap(corr_mat, vmax=1.0, square=True, ax=ax);
-# plt.show()
-
-# print(unique_df)
-
+3
 def encode(series):
   return pd.get_dummies(series.astype(str))
 
-# como las variables categóricas tienen unknown en común entonces pueden haber errores a la hora de codificar
-# estas variables
+# Como las variables categóricas tienen unknown en común entonces pueden haber errores a la hora de codificar estas variables
 
 unique_df.job = unique_df.job.map('job_{}'.format)
 unique_df.marital = unique_df.marital.map('marital_{}'.format)
@@ -120,6 +59,8 @@ train_x = pd.concat([train_x,
                      encode(unique_df.housing),
                      encode(unique_df.loan),
                      encode(unique_df.month)], axis = 1)
+
+# This months not appear in data, then set 0 by default
 train_x['jan'] = 0
 train_x['feb'] = 0
 
@@ -142,16 +83,101 @@ y_train = y.iloc[0:train_cnt].values
 x_test = x.iloc[train_cnt:].values
 y_test = y.iloc[train_cnt:].values
 
-# define the keras model
+# Define the keras model
 model = keras.models.Sequential()
 model.add(keras.layers.Dense(12, input_dim=48, activation='relu'))
 model.add(keras.layers.Dense(48, activation='relu'))
+model.add(keras.layers.Dense(24, activation='relu'))
 model.add(keras.layers.Dense(1, activation='sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.fit(x_train, y_train, epochs=150, batch_size=10)
 
-# evaluate the keras model
+# Evaluate the keras model
 _, accuracy = model.evaluate(x_test, y_test)
-print('Accuracy: %.2f' % (accuracy*100))
+print('Neural Network Accuracy: %.2f' % (accuracy*100))
 
+# Se crea un DataFrame con una fila de 0 por defecto, más adelante según los datos entrados se cambiarán los valores respectivos
+x_prediction = pd.DataFrame(np.array([np.zeros(48)]), columns=variables)
+
+# Función que permite Listar opciones y validar la elección de variables categóricas
+def optionsCat(lista):
+    while True:
+        for idx, j in enumerate(lista):
+            print("(%d) %s" % (idx, j))
+        try:
+            responseInt = int(input("Please, enter a number: "))
+        except ValueError:
+            print("This is not a number.")
+        except Exception:
+            print("This is not a option.")
+        else:
+            if(responseInt < 0 or responseInt >= len(lista)):
+                print("This option is not valid.")
+                pass
+            else:
+                print('Thanks, %s is selected option' % (lista[responseInt]))
+                break
+
+    return lista[responseInt]
+
+# Función que permite Listar opciones y validar la elección de variables numéricas
+def optionsNumber():
+    while True:
+        try:
+            responseInt = int(input("Please, enter a number: "))
+        except ValueError:
+            print("This is not a number.")
+        except Exception:
+            print("This is not a option.")
+        else:
+            print('Thanks, %d is selected option' % (responseInt))
+            break
+
+    return responseInt
+
+print("Select a job [For prediction OK use admin.]:")
+job_option = optionsCat(job)
+x_prediction[job_option][0] = 1
+
+print("Select a marital state [For prediction OK use single]:")
+marital_option = optionsCat(marital)
+x_prediction[marital_option][0] = 1
+
+print("Select a education level [For prediction OK use university.degree]:")
+edication_option = optionsCat(education)
+x_prediction[edication_option][0] = 1
+
+print("Select a default state [For prediction OK use no]:")
+default_option = optionsCat(default)
+x_prediction[default_option][0] = 1
+
+print("Select a housing state [For prediction OK use no]:")
+housing_option = optionsCat(housing)
+x_prediction[housing_option][0] = 1
+
+print("Select a loan state [For prediction OK use no]:")
+loan_option = optionsCat(loan)
+x_prediction[loan_option][0] = 1
+
+print("Select the last contact month [For prediction OK use oct]:")
+month_option = optionsCat(month)
+x_prediction[month_option][0] = 1
+
+print("Enter the age of client in years [For prediction OK use 28]:")
+age_value = optionsNumber()
+x_prediction['age'][0] = age_value
+
+print("Enter the call duration in seconds [For prediction OK use 281]:")
+duration_value = optionsNumber()
+x_prediction['duration'] = duration_value
+
+print("Enter how many previous contact have been [For prediction OK use 2]:")
+previous_value = optionsNumber()
+x_prediction['previous'] = previous_value
+
+y_prediction = model.predict_classes(x_prediction)
+if y_prediction[0][0] == 1:
+    print("The Neural Network predicts that client offert could be successfully")
+else:
+    print("The Neural Network predicts that client offert could be fail")

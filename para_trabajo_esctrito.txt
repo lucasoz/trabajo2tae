@@ -1,0 +1,27 @@
+Parámetros variados
+El hiper parámetro épocas se establece desde el inicio en 150 y no se varia ya que la red alcanza un estado estacionario tempranamente.
+1. Una sola capa intermedia de 12 neuronas, 150 epocas, tamaño de lote: 32  Accuracy: 84.95
+Se puede disminuir el tamaño del lote para que la red se actualice cada que haga forward prop de 10 datos.
+2. Una sola capa intermedia de 12 neuronas, 150 epocas, tamaño de lote: 10  Accuracy: 87.70
+Podemos aumentar la cantidad de neuronas usadas en la capa intermedia para permitir un mejor ajuste a nivel de atributo.
+3. Una sola capa intermedia de 48 neuronas, 150 epocas, tamaño de lote: 10  Accuracy: 89.11
+Se puede mirar otras opciones de funciones de activacion para la capa intermedia.
+4. Una sola capa intermedia de 48 neuronas, 150 epocas, tamaño de lote: 10, funcion de activación tanh Accuracy: Accuracy: 89.81
+5. Una sola capa intermedia de 48 neuronas, 150 epocas, tamaño de lote: 10, funcion de activación sigmoid Accuracy: Accuracy: 89.42
+6. Añadir una capa intermedia de 24 neuronas con función de activación relu en ambas capas ocultas Accuracy: 90.78
+7. Dejar la capa nueva pero cambiar las activaciones de las capas ocultas a relu ambas Accuracy: 90.37
+8. Cambiar la función de activación de la segunda capa oculta a tanh Accuracy: 88.19
+Al usar la funcion de activación tanh en la segunda capa tubo un efecto de retardo en la actualizacion de los pesos ya que en el modelo se observa un estado estacionario muy rápidamente.
+9. Cambiar la función de activación de la segunda capa oculta a relu y un optimizador RMSprop con valores por defecto Accuracy: 90.86
+10. Usar un optimizador Adam y una funcion de perdida mean_squared_error Accuracy: 89.40
+
+Se encontró que la mejor configuración de arquitectura e hiper parámetros para el ajuste de la red neuronal son las siguientes:
+
+model = keras.models.Sequential()
+model.add(keras.layers.Dense(12, input_dim=48, activation='relu'))
+model.add(keras.layers.Dense(48, activation='relu'))
+model.add(keras.layers.Dense(24, activation='relu'))
+model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(x_train, y_train, epochs=150, batch_size=10)

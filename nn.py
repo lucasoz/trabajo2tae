@@ -4,11 +4,14 @@
 # TensorFlow and tf.keras
 import tensorflow as tf
 from tensorflow import keras
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 
 # Helper libraries
 import numpy as np
 import pandas as pd
 from math import floor
+
 
 random_state = 42
 np.random.seed(random_state)
@@ -18,16 +21,16 @@ tf.set_random_seed(random_state)
 bank_df = pd.read_csv("data/bank-additional.csv", sep=";")
 
 # Los 10 atributos elejidos son:
-# 1. age (numÈrico): Edad del cliente.
+# 1. age (num√©rico): Edad del cliente.
 # 2. job (categorico): Tipo de trabajo.
-# 3. marital (categÛrico): Estado civil.
-# 4. education (categÛrico): Grado de escolaridad alcanzado.
-# 5. default (categÛrico): El cliente tiene deudas vencidas.
-# 6. housing (categÛrico): El cliente tiene un prestamo de vivienda.
-# 7. loan (categÛrico): El cliente tiene prestamos personales.
-# 8. duration (numÈrico): DuraciÛn del contacto (Llamada).
-# 9. month (categÛrico): Mes en el que se realizÛ el ˙ltimo contacto (Llamada).
-# 10. previous (numÈrico): N˙mero de contactos previos con el cliente.
+# 3. marital (categ√≥rico): Estado civil.
+# 4. education (categ√≥rico): Grado de escolaridad alcanzado.
+# 5. default (categ√≥rico): El cliente tiene deudas vencidas.
+# 6. housing (categ√≥rico): El cliente tiene un prestamo de vivienda.
+# 7. loan (categ√≥rico): El cliente tiene prestamos personales.
+# 8. duration (num√©rico): Duraci√≥n del contacto (Llamada).
+# 9. month (categ√≥rico): Mes en el que se realiz√≥ el √∫ltimo contacto (Llamada).
+# 10. previous (num√©rico): N√∫mero de contactos previos con el cliente.
 
 merge_vector = ["age","job","marital","education", "default","housing","loan","duration", "month","previous","y"]
 
@@ -42,7 +45,7 @@ unique_df = unique_df.sample(frac=1)
 def encode(series):
   return pd.get_dummies(series.astype(str))
 
-# Como las variables categÛricas tienen unknown en com˙n entonces pueden haber errores a la hora de codificar estas variables
+# Como las variables categ√≥ricas tienen unknown en com√∫n entonces pueden haber errores a la hora de codificar estas variables
 
 unique_df.job = unique_df.job.map('job_{}'.format)
 unique_df.marital = unique_df.marital.map('marital_{}'.format)
@@ -86,24 +89,43 @@ y_train = y.iloc[0:train_cnt].values
 x_test = x.iloc[train_cnt:].values
 y_test = y.iloc[train_cnt:].values
 
-# Define the keras model
-model = keras.models.Sequential()
-model.add(keras.layers.Dense(12, input_dim=48, activation='relu'))
-model.add(keras.layers.Dense(48, activation='relu'))
-model.add(keras.layers.Dense(24, activation='relu'))
-model.add(keras.layers.Dense(1, activation='sigmoid'))
+opcionModelo = int(input('¬øWhat model do you want to use?: \n' +
+                         '(0) Neural Network \n' +
+                         '(1) Random Forest \n' +
+                         '(2) Support Vector Machine \n'))
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=150, batch_size=10)
+if(opcionModelo == 0):
+    #________________RED NEURONAL________________
+    model = keras.models.Sequential()
+    model.add(keras.layers.Dense(12, input_dim=48, activation='relu'))
+    model.add(keras.layers.Dense(48, activation='relu'))
+    model.add(keras.layers.Dense(24, activation='relu'))
+    model.add(keras.layers.Dense(1, activation='sigmoid'))
+    
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.fit(x_train, y_train, epochs=150, batch_size=10)
+    
+    # Evaluaci√≥n del modelo keras
+    _, accuracy = model.evaluate(x_test, y_test)
+    print('Neural Network Accuracy: %.2f' % (accuracy*100))
+elif(opcionModelo == 1):
+    #________________RANDOM FOREST________________
+    #criterio="gini", criterion="entropy", max_depth=3, min_samples_leaf=5,max_leaf_nodes=10
+    model = RandomForestClassifier(criterion="gini", n_estimators=100, max_depth=35,random_state=0)
+    # Entrenamiento
+    model = model.fit(x_train, y_train)   
+else:
+    #________________M√ÅQUINA DE SOPORTE VECTORIAL________________
+    #svr = SVR(kernel='rbf')
+    model = SVC()
+    # Entrenamiento
+    model = model.fit(x_train, y_train)
 
-# Evaluate the keras model
-_, accuracy = model.evaluate(x_test, y_test)
-print('Neural Network Accuracy: %.2f' % (accuracy*100))
 
-# Se crea un DataFrame con una fila de 0 por defecto, m·s adelante seg˙n los datos entrados se cambiar·n los valores respectivos
+# Se crea un DataFrame con una fila de 0 por defecto, m√°s adelante seg√∫n los datos entrados se cambiar√°n los valores respectivos
 x_prediction = pd.DataFrame(np.array([np.zeros(48)]), columns=variables)
 
-# FunciÛn que permite Listar opciones y validar la elecciÛn de variables categÛricas
+# Funci√≥n que permite Listar opciones y validar la elecci√≥n de variables categ√≥ricas
 def optionsCat(lista):
     while True:
         for idx, j in enumerate(lista):
@@ -124,7 +146,7 @@ def optionsCat(lista):
 
     return lista[responseInt]
 
-# FunciÛn que permite Listar opciones y validar la elecciÛn de variables numÈricas
+# Funci√≥n que permite Listar opciones y validar la elecci√≥n de variables num√©ricas
 def optionsNumber():
     while True:
         try:
@@ -179,8 +201,26 @@ print("Enter how many previous contact have been [For prediction OK use 2]:")
 previous_value = optionsNumber()
 x_prediction['previous'] = previous_value
 
-y_prediction = model.predict_classes(x_prediction)
-if y_prediction[0][0] == 1:
-    print("The Neural Network predicts that client offert could be successfully")
+if(opcionModelo == 0):
+    y_prediction = model.predict_classes(x_prediction)
+elif(opcionModelo == 1):
+    y_prediction = model.predict(x_prediction)
 else:
-    print("The Neural Network predicts that client offert could be fail")
+    y_prediction = model.predict(x_prediction)
+
+#Validamos la predicci√≥n  
+if(opcionModelo == 0):
+    if y_prediction[0][0] == 1:
+        print("The Neural Network predicts that client offert could be successfully")
+    else:
+        print("The Neural Network predicts that client offert could be fail")
+elif(opcionModelo == 1):
+    if y_prediction[0] == 1:
+        print("The Random Forest predicts that client offert could be successfully")
+    else:
+        print("The Random Forest predicts that client offert could be fail")
+else:
+    if y_prediction[0] == 1:
+        print("The Support Vector Machine predicts that client offert could be successfully")
+    else:
+        print("The Support Vector Machine predicts that client offert could be fail")

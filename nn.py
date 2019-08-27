@@ -116,8 +116,7 @@ elif(opcionModelo == 1):
     model = model.fit(x_train, y_train)   
 else:
     #________________MÁQUINA DE SOPORTE VECTORIAL________________
-    #svr = SVR(kernel='rbf')
-    model = SVC()
+    model = SVC(kernel='rbf')
     # Entrenamiento
     model = model.fit(x_train, y_train)
 
